@@ -64,6 +64,7 @@ class PatentModel:
         model.add(Dense(nodes, input_shape = (self.train_x.shape[1],), activation = activ))
       else:
         model.add(Dense(nodes, activation = activ))
+      layer_index += 1
     
     model.compile(Adam(lr = lr_rate), loss_func, metrics = metrics)
     model.fit(self.train_x, self.train_y, 

@@ -19,7 +19,7 @@ useful = patent.useful_docs
 useless = patent.useless_docs
 
 useful_abs = (useful.摘要 + useful.第一权利要求).tolist()
-useless_abs= (useless.摘要 + useless.第一权利要求).tolist()
+useless_abs = (useless.摘要 + useless.第一权利要求).tolist()
 
 useful_abs_cut = patent.cut_words(useful_abs, 1)
 useless_abs_cut = patent.cut_words(useless_abs, 1)
