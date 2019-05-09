@@ -2,13 +2,11 @@
 %autoreload 2
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-
-from gensim.models import Word2Vec
 from patent.doc import PatentDoc
+from patent.patentmodel import PatentModel
+from matplotlib import pyplot
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -21,48 +19,32 @@ useful = patent.useful_docs
 useless = patent.useless_docs
 
 useful_abs = (useful.摘要 + useful.第一权利要求).tolist()
-
 useless_abs= (useless.摘要 + useless.第一权利要求).tolist()
 
-useful_abs_cut = patent.cut_words(useful_abs)
-useless_abs_cut = patent.cut_words(useless_abs)
+useful_abs_cut = patent.cut_words(useful_abs, 1)
+useless_abs_cut = patent.cut_words(useless_abs, 1)
 
-# create word2vec model
 all_docs = useful_abs_cut + useless_abs_cut
-word2vec_mdl = Word2Vec(all_docs,
-                        size = 100,
-                        iter = 10,
-                        min_count = 20)
-
-# get doc vectors
-doc_vec = patent.text_score_vector(all_docs, word2vec_mdl)
-
-# train classification model
 label = np.concatenate([np.repeat(1, len(useful)), 
                         np.repeat(0, len(useless))])
-labelEncoder = LabelEncoder()
-label = labelEncoder.fit_transform(label)
-train_x, test_x, train_y, test_y = train_test_split(doc_vec, label, test_size = 0.3)
-lr_mdl = LogisticRegression()
-lr_mdl.fit(train_x, train_y)
-lr_mdl.score(test_x, test_y)
 
-print(classification_report(train_y, lr_mdl.predict(train_x)))
+doc_bow, doc_tfidf, doc_dict, _ = patent.bow_tfidf_matrix(all_docs)
 
+#------------------predict by bow ---------------
+train_x, test_x, train_y, test_y = train_test_split(doc_bow, label, test_size = 0.3, random_state = 88)
+bow_mdl = PatentModel(train_x, train_y, test_x, test_y)
+bow_lr_mdl, bow_lr_test_report = bow_mdl.logistic_reg()
+bow_svm_mdl, bow_svm_test_report = bow_mdl.svm()
+bow_nn_mdl, bow_nn_test_report = bow_mdl.neural_network()
 
+#----------------predict by tfidf------------------
+train_x, test_x, train_y, test_y = train_test_split(doc_tfidf, label, test_size = 0.3, random_state = 88)
+tfidf_mdl = PatentModel(train_x, train_y, test_x, test_y)
+tfidf_lr_mdl, tfidf_lr_test_report = tfidf_mdl.logistic_reg()
+tfidf_svm_mdl, tfidf_svm_test_report = tfidf_mdl.svm()
+tfidf_nn_mdl, tfidf_nn_test_report = tfidf_mdl.neural_network()
 
-
-#------------------predict by bow
-from sklearn.feature_extraction import DictVectorizer
-from collections import Counter
-v = DictVectorizer()
-
-all_docs_words = v.fit_transform(Counter(doc) for doc in all_docs)
-train_x, test_x, train_y, test_y = train_test_split(all_docs_words, label, test_size = 0.3)
-lr_mdl = LogisticRegression()
-lr_mdl.fit(train_x, train_y)
-lr_mdl.score(test_x, test_y)
-
-print(classification_report(test_y, lr_mdl.predict(test_x)))
-
+# plot roc curve
+bow_mdl.roc_curve_plot(bow_lr_mdl, "BOW LR ROC curve")
+pyplot.show()
 

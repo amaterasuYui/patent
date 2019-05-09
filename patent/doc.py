@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import re
 import jieba
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from collections import Counter
 
 
 class PatentDoc:
@@ -31,7 +34,7 @@ class PatentDoc:
       
     return [word.strip() for word in words if word.strip()]
     
-  def cut_words(self, docs):
+  def cut_words(self, docs, filter_len = 0):
     
     word_docs = []
     for text in docs:
@@ -39,9 +42,21 @@ class PatentDoc:
       text = re.sub("\d+", "", text)
       text = re.sub("\s+", "", text)
       text = re.sub("[a-z]+", "", text)
-      word_docs.append([word for word in jieba.cut(text) if word not in self.stop_words])
+      word_docs.append([word for word in jieba.cut(text) 
+                        if word not in self.stop_words
+                        and len(word) > filter_len])
       
     return word_docs
+    
+  @staticmethod
+  def bow_tfidf_matrix(docs, smooth_idf = True):
+    mat_dict = DictVectorizer()
+    mat = mat_dict.fit_transform(Counter(doc) for doc in docs)
+    
+    tfidf = TfidfTransformer(smooth_idf = smooth_idf)
+    tfidf_mat = tfidf.fit_transform(mat.toarray())
+    
+    return mat, tfidf_mat, mat_dict, tfidf
   
   @staticmethod
   def doc_vector(text, word2vec_mdl):
