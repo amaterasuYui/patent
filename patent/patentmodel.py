@@ -1,4 +1,5 @@
 from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 from sklearn.calibration import CalibratedClassifierCV
 from keras.models import Sequential
@@ -25,6 +26,13 @@ class PatentModel:
     test_report = classification_report(self.test_y, lr_mdl.predict(self.test_x))
     
     return lr_mdl, test_report
+    
+  def naive_bayes(self):
+    mdl = MultinomialNB()
+    mdl.fit(self.train_x, self.train_y)
+    test_report = classification_report(self.test_y, mdl.predict(self.test_x))
+    
+    return mdl, test_report
     
   def svm(self, random_state = 24):
     
