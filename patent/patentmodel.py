@@ -76,10 +76,15 @@ class PatentModel:
     return model, test_report
     
     
-  def roc_curve_plot(self, mdl, title):
+  def roc_curve_plot(self, mdl, title, dl = False):
     
     test_prob = mdl.predict_proba(self.test_x)
-    test_prob = test_prob[:, 1]
+    
+    
+    if dl:
+      test_prob = test_prob.ravel()
+    else:
+      test_prob = test_prob[:, 1]
     auc = roc_auc_score(self.test_y, test_prob)
     fpr, tpr, thresholds = roc_curve(self.test_y, test_prob)
 

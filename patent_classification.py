@@ -50,3 +50,6 @@ tfidf_nn_mdl, tfidf_nn_test_report = tfidf_mdl.neural_network()
 bow_mdl.roc_curve_plot(bow_nb_mdl, "BOW NB ROC curve")
 pyplot.show()
 
+bow_mdl.roc_curve_plot(bow_nn_mdl, "BOW NN ROC curve", True)
+pyplot.show()
+
