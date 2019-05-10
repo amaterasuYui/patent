@@ -40,16 +40,21 @@ bow_nn_mdl, bow_nn_test_report = bow_mdl.neural_network()
 
 #----------------predict by tfidf------------------
 train_x, test_x, train_y, test_y = train_test_split(doc_tfidf, label, test_size = 0.3, random_state = 88)
-tfidf_mdl = PatentModel(train_x, train_y, test_x, test_y)
+tfidf_mdl = PatentModel(train_x, train_y, test_x, test_y, "tfidf")
 tfidf_lr_mdl, tfidf_lr_test_report = tfidf_mdl.logistic_reg()
 tfidf_nb_mdl, tfidf_nb_test_report = tfidf_mdl.naive_bayes()
 tfidf_svm_mdl, tfidf_svm_test_report = tfidf_mdl.svm()
 tfidf_nn_mdl, tfidf_nn_test_report = tfidf_mdl.neural_network()
 
 # plot roc curve
-bow_mdl.roc_curve_plot(bow_nb_mdl, "BOW NB ROC curve")
+mdls = [bow_lr_mdl, bow_nb_mdl, bow_svm_mdl, bow_nn_mdl]
+mdl_names = ["LR", "NB", "SVM", "NN"]
+bow_mdl.roc_curve_plot(mdls, mdl_names, "Bow ROC Curves")
 pyplot.show()
 
-bow_mdl.roc_curve_plot(bow_nn_mdl, "BOW NN ROC curve", True)
+# tfidf roc curve
+mdls = [tfidf_lr_mdl, tfidf_nb_mdl, tfidf_svm_mdl, tfidf_nn_mdl]
+mdl_names = ["LR", "NB", "SVM", "NN"]
+tfidf_mdl.roc_curve_plot(mdls, mdl_names, "TFIDF ROC Curves")
 pyplot.show()
 

@@ -75,22 +75,32 @@ class PatentModel:
     test_report = classification_report(self.test_y, model.predict_classes(self.test_x))
     
     return model, test_report
+  
+  def roc_curve_point(self, mdl):
+    auc = []
+    fpr = []
+    tpr = []
     
+    for model in mdl:
+      test_prob = model.predict_proba(self.test_x)
+      
+      if "keras" in str(type(model)) :
+        test_prob = test_prob.ravel()
+      else:
+        test_prob = test_prob[:, 1]
+      auc.append(roc_auc_score(self.test_y, test_prob))
+      mdl_fpr, mdl_tpr, _ = roc_curve(self.test_y, test_prob)
+      fpr.append(mdl_fpr)
+      tpr.append(mdl_tpr)
     
-  def roc_curve_plot(self, mdl, title, dl = False):
+    return [auc, fpr, tpr]
     
-    test_prob = mdl.predict_proba(self.test_x)
+  def roc_curve_plot(self, mdl, mdl_names, title):
+    roc_metrics = self.roc_curve_point(mdl)
+    for auc, fpr, tpr, mdl_name in zip(*roc_metrics, mdl_names):
+      pyplot.plot([0, 1], [0, 1], linestyle = "--")
+      pyplot.plot(fpr, tpr, marker = "", label = "%s ROC curve (area = %0.2f)" % (mdl_name, auc))
     
-    
-    if dl:
-      test_prob = test_prob.ravel()
-    else:
-      test_prob = test_prob[:, 1]
-    auc = roc_auc_score(self.test_y, test_prob)
-    fpr, tpr, thresholds = roc_curve(self.test_y, test_prob)
-
-    pyplot.plot([0, 1], [0, 1], linestyle = "--")
-    pyplot.plot(fpr, tpr, marker = ".", label = "ROC curve (area = %0.2f)" % auc)
     pyplot.title(title)
     pyplot.legend(loc = "lower right")
           
