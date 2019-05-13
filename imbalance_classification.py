@@ -1,5 +1,6 @@
 %load_ext autoreload
 %autoreload 2
+import os
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -10,6 +11,7 @@ from patent.patentmodel import PatentModel
 from matplotlib import pyplot
 import warnings
 warnings.filterwarnings("ignore")
+import pickle
 
 ###### create useless csv
 # useful_data = pd.read_csv("data/DC/useful.CSV")
@@ -26,8 +28,8 @@ patent = PatentDoc(useful_path, useless_path, stop_words_path)
 useful = patent.useful_docs
 useless = patent.useless_docs
 
-useful_abs = (useful.标题 + useful["当前申请(专利权)人"] + useful.摘要 + useful.第一权利要求).tolist()
-useless_abs = (useful.标题 + useful["当前申请(专利权)人"] + useless.摘要 + useless.第一权利要求).tolist()
+useful_abs = (useful.标题 +  useful["当前申请(专利权)人"] + useful.摘要 + useful.第一权利要求).tolist()
+useless_abs = (useless.标题 + useless["当前申请(专利权)人"] + useless.摘要 + useless.第一权利要求).tolist()
 
 useful_abs_cut = patent.cut_words(useful_abs, 1)
 useless_abs_cut = patent.cut_words(useless_abs, 1)
@@ -75,14 +77,30 @@ file_s = pd.concat([pd.read_csv("data/DC_oot/file_1.csv"),
                     pd.read_csv("data/DC_oot/file_2.csv"),
                     pd.read_csv("data/DC_oot/file_3.csv"),
                     pd.read_csv("data/DC_oot/file_4.csv")])
-new_docs = (file_s.摘要 + file_s.第一权利要求).tolist()
-new_docs = patent.cut_words(new_docs, 1)
+new_docs_ori = (file_s.标题 + file_s["当前申请(专利权)人"] + file_s.摘要 + file_s.第一权利要求).tolist()
+new_docs = patent.cut_words(new_docs_ori, 1)
 mat, _ = PatentDoc.transform_predict(bow_dict, tfidf_dict, new_docs)
-pred_class = bow_nn_mdl.predict_classes(mat)
-pred_probability = bow_nn_mdl.predict_proba(mat)
+pred_class = bow_lr_mdl.predict(mat)
+pred_probability = bow_lr_mdl.predict_proba(mat)
 
-file_out = file_s.assign(pred_probability = pred_probability,
-                         pred_class = np.where(pred_probability > 0.05, 1, 0))
+if_doujiang = np.array([0.5 if "豆浆" in text or ("豆浆" in text and ("苏泊尔" in text or "美的" in text or "九阳" in text)) else 0 for text in new_docs])
+file_out = file_s.assign(pred_prob = pred_probability[:, 1] + if_doujiang,
+                         pred_class = np.where(pred_probability[:, 1] + if_doujiang > 0.5, 1, 0))
+file_out.pred_class.sum()
+
 
 file_out.to_excel("data/DC_oot/pred.xlsx", encoding = "utf-8")
+
+
+#------------save model----------
+if not os.path.exists("model"):
+  os.mkdir("model")
+
+file_lr = "model/lr_mdl.pickel"
+file_svm = "model/svm_mdl.pickel"
+file_nn = "model/nn_mdl.h5"
+
+pickle.dump(bow_lr_mdl, open(file_lr, "wb"))
+pickle.dump(bow_svm_mdl, open(file_svm, "wb"))
+bow_nn_mdl.save(file_nn)
 
