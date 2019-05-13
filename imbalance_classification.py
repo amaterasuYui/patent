@@ -26,8 +26,8 @@ patent = PatentDoc(useful_path, useless_path, stop_words_path)
 useful = patent.useful_docs
 useless = patent.useless_docs
 
-useful_abs = (useful.摘要 + useful.第一权利要求).tolist()
-useless_abs = (useless.摘要 + useless.第一权利要求).tolist()
+useful_abs = (useful.标题 + useful["当前申请(专利权)人"] + useful.摘要 + useful.第一权利要求).tolist()
+useless_abs = (useful.标题 + useful["当前申请(专利权)人"] + useless.摘要 + useless.第一权利要求).tolist()
 
 useful_abs_cut = patent.cut_words(useful_abs, 1)
 useless_abs_cut = patent.cut_words(useless_abs, 1)
@@ -36,7 +36,7 @@ all_docs = useful_abs_cut + useless_abs_cut
 label = np.concatenate([np.repeat(1, len(useful)), 
                         np.repeat(0, len(useless))])
 
-doc_bow, doc_tfidf, doc_dict, _ = patent.bow_tfidf_matrix(all_docs)
+doc_bow, doc_tfidf, bow_dict, tfidf_dict = patent.bow_tfidf_matrix(all_docs)
 
 #------------------predict by bow ---------------
 train_x, test_x, train_y, test_y = train_test_split(doc_bow, 
@@ -61,7 +61,7 @@ tfidf_nn_mdl, tfidf_nn_test_report = tfidf_mdl.neural_network()
 
 # plot roc curve
 mdls = [bow_lr_mdl,  bow_svm_mdl, bow_nn_mdl]
-mdl_names = ["LR",  "SVM", "NN"]
+mdl_names = ["LR", "SVM", "NN"]
 bow_mdl.roc_curve_plot(mdls, mdl_names, "Bow ROC Curves")
 pyplot.show()
 
@@ -70,4 +70,19 @@ mdls = [tfidf_lr_mdl, tfidf_svm_mdl, tfidf_nn_mdl]
 mdl_names = ["LR", "SVM", "NN"]
 tfidf_mdl.roc_curve_plot(mdls, mdl_names, "TFIDF ROC Curves")
 pyplot.show()
+#-------------Test new dataset---------------------
+file_s = pd.concat([pd.read_csv("data/DC_oot/file_1.csv"),
+                    pd.read_csv("data/DC_oot/file_2.csv"),
+                    pd.read_csv("data/DC_oot/file_3.csv"),
+                    pd.read_csv("data/DC_oot/file_4.csv")])
+new_docs = (file_s.摘要 + file_s.第一权利要求).tolist()
+new_docs = patent.cut_words(new_docs, 1)
+mat, _ = PatentDoc.transform_predict(bow_dict, tfidf_dict, new_docs)
+pred_class = bow_nn_mdl.predict_classes(mat)
+pred_probability = bow_nn_mdl.predict_proba(mat)
+
+file_out = file_s.assign(pred_probability = pred_probability,
+                         pred_class = np.where(pred_probability > 0.05, 1, 0))
+
+file_out.to_excel("data/DC_oot/pred.xlsx", encoding = "utf-8")
 

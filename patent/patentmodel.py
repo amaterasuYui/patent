@@ -103,8 +103,3 @@ class PatentModel:
     
     pyplot.title(title)
     pyplot.legend(loc = "lower right")
-          
-      
-      
-
-    

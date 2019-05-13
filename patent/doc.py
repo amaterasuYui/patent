@@ -69,3 +69,12 @@ class PatentDoc:
   def text_score_vector(cls, docs, word2vec_mdl):
     
     return [cls.doc_vector(text, word2vec_mdl) for text in docs]
+    
+  @staticmethod  
+  def transform_predict(bow_processor, tf_idf_processor, new_data):
+    
+    bow_mat = bow_processor.transform(Counter(doc) for doc in new_data)
+    tf_idf_mat = tf_idf_processor.transform(bow_mat.toarray())
+    
+    return bow_mat, tf_idf_mat
+    
